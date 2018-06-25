@@ -1,2 +1,2 @@
 
-print("Hello world from python 2")
+print("Hello world from python 3")
