@@ -4,5 +4,5 @@ COPY . /code/
 
 RUN pip install -r /code/requirements.txt
 
-WORKDIR /code/
+WORKDIR /data/
 CMD ["python", "-u", "/code/main.py"]
