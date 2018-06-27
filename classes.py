@@ -20,7 +20,7 @@ class ExportJob(ABC):
 
     @abstractmethod
     def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient,
-                 destination_bucket: str, incremental: bool):
+                 destination_bucket: str, incremental: bool, primary_key: List[str]):
         self.fields = fields
         self.startAt = start_at
         self.endAt = end_at
@@ -28,6 +28,7 @@ class ExportJob(ABC):
         self.state = None
         self.destination_bucket = destination_bucket
         self.incremental = incremental
+        self.primary_key = primary_key
 
     @abstractmethod
     def create(self):
@@ -50,7 +51,8 @@ class ExportJob(ABC):
             cfg.write_table_manifest('/data/out/tables/' + self.entity + '.csv',
                                      destination=self.destination_bucket + '.' + self.entity,
                                      columns=self.fields,
-                                     incremental=self.incremental)
+                                     incremental=self.incremental,
+                                     primary_key=self.primary_key)
             self.__class__.manifesto_file_written = True
             # os.makedirs('/data/out/tables/' + self.entity + '.csv', exist_ok=True)
             # with open('/data/out/tables/' + self.entity + '.csv.manifesto', 'wt') as file:
@@ -74,8 +76,8 @@ class LeadsExportJob(ExportJob):
     entity = "leads"
 
     def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient,
-                 date_filter_type: str, destination_bucket: str, incremental: bool):
-        super().__init__(fields, start_at, end_at, marketo_client, destination_bucket, incremental)
+                 date_filter_type: str, destination_bucket: str, incremental: bool, primary_key: List[str]):
+        super().__init__(fields, start_at, end_at, marketo_client, destination_bucket, incremental, primary_key)
         self.date_filter_type = date_filter_type
         self.create()
 
@@ -90,8 +92,8 @@ class ActivitiesExportJob(ExportJob):
     entity = "activities"
 
     def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient,
-                 activities_type_ids: List[int], destination_bucket: str, incremental: bool):
-        super().__init__(fields, start_at, end_at, marketo_client, destination_bucket, incremental)
+                 activities_type_ids: List[int], destination_bucket: str, incremental: bool, primary_key: List[str]):
+        super().__init__(fields, start_at, end_at, marketo_client, destination_bucket, incremental, primary_key)
         self.activity_type_ids = activities_type_ids
         self.create()
 

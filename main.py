@@ -10,13 +10,15 @@ chunks_params = [date_range_to_from_to_params(date_range, short_dt_format)
 leads_export_jobs = [LeadsExportJob(marketo_client=mc,
                                     fields=leads_fields, date_filter_type=leads_date_filter_type,
                                     start_at=chunk_params['from'], end_at=chunk_params['to'],
-                                    destination_bucket=destination_bucket, incremental=incremental)
+                                    destination_bucket=destination_bucket, incremental=incremental,
+                                    primary_key=leads_primary_key)
                      for chunk_params in chunks_params]
 
 activities_export_jobs = [ActivitiesExportJob(marketo_client=mc,
                                               fields=activities_fields, activities_type_ids=activities_type_ids,
                                               start_at=chunk_params['from'], end_at=chunk_params['to'],
-                                              destination_bucket=destination_bucket, incremental=incremental)
+                                              destination_bucket=destination_bucket, incremental=incremental,
+                                              primary_key=activities_primary_key)
                           for chunk_params in chunks_params]
 
 export_jobs = leads_export_jobs + activities_export_jobs

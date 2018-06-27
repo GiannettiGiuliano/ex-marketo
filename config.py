@@ -29,9 +29,11 @@ days = params.get('days')
 
 leads_date_filter_type = params.get('leads_date_filter_type')
 leads_fields = params.get('leads_fields')
+leads_primary_key = params.get('leads_primary_key')
 
 activities_type_ids = params.get('activities_type_ids')
 activities_fields = params.get('activities_fields')
+activities_primary_key = params.get('activities_primary_key')
 
 # Initialize MarketoClient
 mc = MarketoClient(munchkin_id, client_id, client_secret)

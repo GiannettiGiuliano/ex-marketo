@@ -30,6 +30,7 @@ This component will attempt to use bulk exports of `Leads` and `Activities` acco
     "emailInvalid",
     "THV_Role__c"
   ],
+  "leads_primary_key": ["id"],
   "activities_type_ids": [
     13,
     1
@@ -43,6 +44,7 @@ This component will attempt to use bulk exports of `Leads` and `Activities` acco
     "primaryAttributeValueId",
     "primaryAttributeValue",
     "attributes"
-  ]
+  ],
+  "activities_primary_key": ["marketoGUID"]
 }
 ```
