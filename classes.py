@@ -1,8 +1,8 @@
-import json
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import List
 
+from config import cfg
 from marketorestpython.client import MarketoClient
 
 
@@ -18,19 +18,19 @@ class ExportJob(ABC):
     def status(self):
         return self.state['status']
 
-    def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient, filter_type: str):
+    @abstractmethod
+    def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient,
+                 destination_bucket: str, incremental: bool):
         self.fields = fields
         self.startAt = start_at
         self.endAt = end_at
         self.marketo_client = marketo_client
-        self.filter_type = filter_type
         self.state = None
-        self.create()
+        self.destination_bucket = destination_bucket
+        self.incremental = incremental
 
+    @abstractmethod
     def create(self):
-        self.state = self.marketo_client.execute(method='create_' + self.entity + '_export_job', fields=self.fields,
-                                                 filters={self.filter_type:
-                                                              {'endAt': self.endAt, 'startAt': self.startAt}})[0]
         return self
 
     def enqueue(self):
@@ -44,13 +44,19 @@ class ExportJob(ABC):
     def get_file_contents(self):
         return self.marketo_client.execute(method='get_' + self.entity + '_export_job_file', job_id=self.id)
 
-    def write_manifesto_file(self):  # TODO: use KBC library
+    def write_manifesto_file(self):
         if not self.__class__.manifesto_file_written:
             os.makedirs('/data/out/tables/' + self.entity + '.csv', exist_ok=True)
-            with open('/data/out/tables/' + self.entity + '.csv.manifesto', 'wt') as file:
-                file.write(json.dumps({"columns": self.fields,
-                                       "destination": "in.c-marketo." + self.entity}))
-                self.__class__.manifesto_file_written = True
+            cfg.write_table_manifest('/data/out/tables/' + self.entity + '.csv',
+                                     destination=self.destination_bucket + '.' + self.entity,
+                                     columns=self.fields,
+                                     incremental=self.incremental)
+            self.__class__.manifesto_file_written = True
+            # os.makedirs('/data/out/tables/' + self.entity + '.csv', exist_ok=True)
+            # with open('/data/out/tables/' + self.entity + '.csv.manifesto', 'wt') as file:
+            #     file.write(json.dumps({"columns": self.fields,
+            #                            "destination": "in.c-marketo." + self.entity}))
+            #     self.__class__.manifesto_file_written = True
         return self
 
     def write_file(self, include_header=False):
@@ -67,6 +73,32 @@ class ExportJob(ABC):
 class LeadsExportJob(ExportJob):
     entity = "leads"
 
+    def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient,
+                 date_filter_type: str, destination_bucket: str, incremental: bool):
+        super().__init__(fields, start_at, end_at, marketo_client, destination_bucket, incremental)
+        self.date_filter_type = date_filter_type
+        self.create()
+
+    def create(self):
+        filters = {self.date_filter_type: {'endAt': self.endAt, 'startAt': self.startAt}}
+        self.state = self.marketo_client.execute(method='create_' + self.entity + '_export_job', fields=self.fields,
+                                                 filters=filters)[0]
+        return self
+
 
 class ActivitiesExportJob(ExportJob):
     entity = "activities"
+
+    def __init__(self, fields: List[str], start_at: str, end_at: str, marketo_client: MarketoClient,
+                 activities_type_ids: List[int], destination_bucket: str, incremental: bool):
+        super().__init__(fields, start_at, end_at, marketo_client, destination_bucket, incremental)
+        self.activity_type_ids = activities_type_ids
+        self.create()
+
+    def create(self):
+        filters = ({"createdAt": {'endAt': self.endAt, 'startAt': self.startAt}} if self.activity_type_ids is None else
+                   {"createdAt": {'endAt': self.endAt, 'startAt': self.startAt},
+                    "activityTypeIds": self.activity_type_ids})
+        self.state = self.marketo_client.execute(method='create_' + self.entity + '_export_job', fields=self.fields,
+                                                 filters=filters)[0]
+        return self
