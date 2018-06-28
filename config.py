@@ -6,33 +6,33 @@ from keboola import docker
 
 from marketorestpython.client import MarketoClient
 
-# API specification based parameters
-chunk_days = 7  # maximum is 31, but this reduces memory requirements
-short_dt_format = '%Y-%m-%d'
-inter_query_sleep_time = 5
-
 # Load user paramsq
 cfg = docker.Config('/data/')
 params = cfg.get_parameters()
 
+# Driver and API parameters
+chunk_days = params.get('chunk_days', 7)  # maximum is 31, but the default of 7 reduces memory requirements
+short_dt_format = '%Y-%m-%d'
+inter_query_sleep_time = params.get('inter_query_sleep_time', 5)
+
 # Keboola config based parameters
-destination_bucket = params.get('destination_bucket')
-incremental = params.get('incremental')
+destination_bucket = params['destination_bucket']
+incremental = params['incremental']
 
 # Authentication
-munchkin_id = params.get('munchkin_id')
-client_id = params.get('client_id')
-client_secret = params.get('client_secret')
+munchkin_id = params['munchkin_id']
+client_id = params['client_id']
+client_secret = params['client_secret']
 
 # Data params
-days = params.get('days')
+days = params['days']
 
-leads_date_filter_type = params.get('leads_date_filter_type')
-leads_fields = params.get('leads_fields')
+leads_date_filter_type = params.get('leads_date_filter_type', "updatedAt")
+leads_fields = params['leads_fields']
 leads_primary_key = params.get('leads_primary_key')
 
 activities_type_ids = params.get('activities_type_ids')
-activities_fields = params.get('activities_fields')
+activities_fields = params['activities_fields']
 activities_primary_key = params.get('activities_primary_key')
 
 # Initialize MarketoClient

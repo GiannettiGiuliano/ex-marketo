@@ -4,6 +4,7 @@ from typing import List
 
 from config import cfg
 from marketorestpython.client import MarketoClient
+from marketorestpython.helper.exceptions import MarketoException
 
 
 class ExportJob(ABC):
@@ -34,9 +35,15 @@ class ExportJob(ABC):
     def create(self):
         return self
 
-    def enqueue(self):
-        self.state = self.marketo_client.execute(method='enqueue_' + self.entity + '_export_job', job_id=self.id)[0]
-        return self
+    def enqueue(self) -> bool:
+        try:
+            self.state = self.marketo_client.execute(method='enqueue_' + self.entity + '_export_job', job_id=self.id)[0]
+        except MarketoException as e:
+            if e.code == '1029':
+                return False
+            else:
+                raise e
+        return True
 
     def sync_state(self):
         self.state = self.marketo_client.execute(method='get_' + self.entity + '_export_job_status', job_id=self.id)[0]
@@ -54,11 +61,6 @@ class ExportJob(ABC):
                                      incremental=self.incremental,
                                      primary_key=self.primary_key)
             self.__class__.manifesto_file_written = True
-            # os.makedirs('/data/out/tables/' + self.entity + '.csv', exist_ok=True)
-            # with open('/data/out/tables/' + self.entity + '.csv.manifesto', 'wt') as file:
-            #     file.write(json.dumps({"columns": self.fields,
-            #                            "destination": "in.c-marketo." + self.entity}))
-            #     self.__class__.manifesto_file_written = True
         return self
 
     def write_file(self, include_header=False):

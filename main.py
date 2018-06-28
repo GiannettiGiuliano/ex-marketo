@@ -23,16 +23,20 @@ activities_export_jobs = [ActivitiesExportJob(marketo_client=mc,
 
 export_jobs = leads_export_jobs + activities_export_jobs
 
-for export_job in export_jobs:
-    export_job.enqueue()
-
-print("Export jobs created and enqueued.")
+print("Export jobs created: {}".format(len(export_jobs)))
 
 running_export_jobs = export_jobs
 while len(running_export_jobs) > 0:
     for export_job in running_export_jobs:
         export_job.sync_state()
-        if export_job.status == "Completed":
+        if export_job.status == "Created":
+            if not export_job.enqueue():
+                print("Export job queue full; will retry to enqueue.")
+        elif export_job.status == "Completed":
             export_job.write_file()
             running_export_jobs.remove(export_job)
+            print("Export job done. Export jobs remaining: {}".format(len(export_jobs)))
+        elif export_job.status not in ("Queued", "Processing"):
+            raise Exception("Unexpected export job status: Export job {} had status {}.".format(export_job.id,
+                                                                                                export_job.status))
     time.sleep(inter_query_sleep_time)

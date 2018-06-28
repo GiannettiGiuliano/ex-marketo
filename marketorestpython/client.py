@@ -261,7 +261,7 @@ class MarketoClient:
                     self.authenticate()
                     continue
                 else:
-                    raise Exception({'message': e.message, 'code': e.code})
+                    raise e
             break
         return result
 
