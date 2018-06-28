@@ -1,5 +1,5 @@
 import math as m
-from datetime import date
+from datetime import date, datetime
 
 import pandas as pd
 from keboola import docker
@@ -25,7 +25,9 @@ client_id = params['client_id']
 client_secret = params['client_secret']
 
 # Data params
-days = params['days']
+days = params.get('days')
+start_date_str = params.get('start_date')
+end_date_str = params.get('end_date')
 
 leads_date_filter_type = params.get('leads_date_filter_type', "updatedAt")
 leads_fields = params['leads_fields']
@@ -39,14 +41,21 @@ activities_primary_key = params.get('activities_primary_key')
 mc = MarketoClient(munchkin_id, client_id, client_secret)
 
 # Date chunk setup
-start_day = date.today() - pd.Timedelta(days=days - 1)
+if days is None:
+    start_date = datetime.strptime(start_date_str, short_dt_format)
+    end_date = datetime.strptime(end_date_str, short_dt_format)
+    days = (end_date - start_date).days + 1
+else:
+    start_date = date.today() - pd.Timedelta(days=days - 1)
+
+assert days > 0, "'days' parameter must be > 0 if specified and 'start_date' must be < 'end_date' if specified"
 
 full_chunks = m.floor(days / chunk_days)
 leftover_days = days % chunk_days
 
 chunk_list = []
 
-chunk_start = start_day
+chunk_start = start_date
 
 for i in range(int(full_chunks)):
     chunk_range = pd.date_range(chunk_start, periods=chunk_days)
