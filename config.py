@@ -58,12 +58,12 @@ chunk_list = []
 chunk_start = start_date
 
 for i in range(int(full_chunks)):
-    chunk_range = pd.date_range(chunk_start, periods=chunk_days)
+    chunk_range = pd.date_range(chunk_start, periods=chunk_days + 1)
     chunk_list.append(chunk_range)
     chunk_start += pd.Timedelta(days=chunk_days)
 
 if leftover_days > 0:
-    chunk_range = pd.date_range(chunk_start, periods=leftover_days)
+    chunk_range = pd.date_range(chunk_start, periods=leftover_days + 1)
     chunk_list.append(chunk_range)
 
 
